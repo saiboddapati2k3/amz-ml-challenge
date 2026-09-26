@@ -1,0 +1,12 @@
+train: s1 45,000  s23 10,320,219
+[India] s1 18,012  s23 4,133,346
+  tokens ready 114s
+  keys spilled (305s)
+  S1 18,012/18,012: kept 0.77M (335s)
+[US] s1 26,988  s23 6,186,873
+  tokens ready 402s
+  keys spilled (604s)
+  S1 25,000/26,988: kept 1.04M (754s)
+  S1 26,988/26,988: kept 0.08M (764s)
+wrote artifacts/cand\train_lockbox: 1,886,151 pairs over 45,000 S1 with candidates (1113s)
+peak RSS 2.37 GB, wall 1115s

@@ -1,0 +1,27 @@
+D:\Downloads\business_entity_resolution\business_entity_resolution\src\eval\blocking_recall.py:20: DeprecationWarning: In Polars 2.0, the default behavior for `empty_as_null` will change to `False`. To keep the current behavior, explicitly set `empty_as_null=True`.
+  .explode("b").with_columns(pl.col("b").str.strip_chars())
+S1 evaluated: 22,133   truth pairs: 76,532   candidates: 927,282 (41.9 per S1)
+pair recall: 0.9581
+shape: (2, 3)
+┌─────┬──────────┬───────┐
+│ src ┆ recall   ┆ n     │
+│ --- ┆ ---      ┆ ---   │
+│ i8  ┆ f64      ┆ u32   │
+╞═════╪══════════╪═══════╡
+│ 2   ┆ 0.962175 ┆ 36907 │
+│ 3   ┆ 0.954297 ┆ 39625 │
+└─────┴──────────┴───────┘
+shape: (2, 3)
+┌─────────┬──────────┬───────┐
+│ country ┆ recall   ┆ n     │
+│ ---     ┆ ---      ┆ ---   │
+│ str     ┆ f64      ┆ u32   │
+╞═════════╪══════════╪═══════╡
+│ US      ┆ 0.979321 ┆ 46230 │
+│ India   ┆ 0.925714 ┆ 30302 │
+└─────────┴──────────┴───────┘
+  recall@r_all<=5: 0.8377
+  recall@r_all<=10: 0.9187
+  recall@r_all<=20: 0.9413
+  recall@r_all<=40: 0.9567
+S1 with every true match retrieved: 0.8803 (of 20,892 with matches)

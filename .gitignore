@@ -1,0 +1,26 @@
+# Environment / OS
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+.ipynb_checkpoints/
+
+# Challenge data (never commit; uploaded to Kaggle as a private dataset)
+dataset/
+dataset_synth/
+*.tsv
+*.zip
+
+# Generated outputs (rebuilt by the pipeline; carried between Kaggle sessions as notebook output)
+output/
+artifacts/*
+# ...except the small files needed to reproduce and compare runs:
+!artifacts/splits/
+!artifacts/model/
+artifacts/model/*
+!artifacts/model/model_dev_frozen_*.txt
+!artifacts/model/oof_dev_frozen.parquet
+!artifacts/model/folds_dev_frozen.parquet
+!artifacts/model/meta_dev_frozen.json
+!artifacts/model/importance_dev_frozen.csv

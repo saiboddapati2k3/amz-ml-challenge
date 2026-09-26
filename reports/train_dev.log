@@ -1,0 +1,28 @@
+  split 0: best_iter 390, 51s
+  split 1: best_iter 341, 45s
+  split 2: best_iter 425, 55s
+  split 3: best_iter 389, 50s
+  split 4: best_iter 362, 58s
+OOF AUC 0.99976  AP 0.99749
+shape: (15, 2)
++--------------+----------+
+| feature      | gain     |
+| ---          | ---      |
+| str          | f64      |
++=========================+
+| r_all        | 0.221446 |
+| n_fam        | 0.220628 |
+| s_mix        | 0.159849 |
+| s_all        | 0.053521 |
+| num_conflict | 0.037307 |
+| addr_unm_b   | 0.03566  |
+| name_unm_b   | 0.028855 |
+| num_ov_min   | 0.02817  |
+| nm_partial   | 0.02361  |
+| nm_ph_ratio  | 0.021554 |
+| addr_wov_min | 0.019656 |
+| ad_tset      | 0.014103 |
+| nt_n_b       | 0.009759 |
+| nm_jw        | 0.009291 |
+| num_n_b      | 0.009215 |
++--------------+----------+

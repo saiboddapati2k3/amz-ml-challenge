@@ -1,0 +1,28 @@
+train: s1 22,133  s23 10,320,219
+[India] s1 8,751  s23 4,133,346
+  tokens ready 134s
+  N1: postings 6.3M, pairs 0.7M (144s)
+  N2: postings 6.4M, pairs 0.6M (148s)
+  N3: postings 0.8M, pairs 0.1M (151s)
+  A1: postings 20.1M, pairs 1.3M (188s)
+  A2: postings 16.9M, pairs 0.8M (215s)
+  M1: postings 18.0M, pairs 0.2M (225s)
+  P1: postings 1.1M, pairs 0.2M (228s)
+  P2: postings 3.5M, pairs 0.3M (229s)
+  A3: postings 2.1M, pairs 0.2M (230s)
+  A4: postings 22.6M, pairs 1.8M (365s)
+  merged: 0.8M -> kept 0.37M (366s)
+[US] s1 13,382  s23 6,186,873
+  tokens ready 129s
+  N1: postings 9.4M, pairs 0.9M (151s)
+  N2: postings 13.7M, pairs 1.1M (158s)
+  N3: postings 1.3M, pairs 0.2M (161s)
+  A1: postings 21.7M, pairs 0.9M (187s)
+  A2: postings 17.4M, pairs 1.2M (217s)
+  M1: postings 28.8M, pairs 0.7M (246s)
+  P1: postings 1.4M, pairs 0.2M (250s)
+  P2: postings 8.3M, pairs 0.9M (252s)
+  A3: postings 1.7M, pairs 0.1M (253s)
+  A4: postings 22.8M, pairs 1.0M (282s)
+  merged: 1.2M -> kept 0.55M (283s)
+wrote artifacts/cand\train_dev_v2.parquet: 919,802 pairs over 22,132 S1 with candidates

@@ -1,0 +1,10 @@
+train: s1 22,133  s23 10,320,219
+[India] s1 8,751  s23 4,133,346
+  tokens ready 68s
+  keys spilled (215s)
+  S1 8,751/8,751: kept 0.36M (218s)
+[US] s1 13,382  s23 6,186,873
+  tokens ready 87s
+  keys spilled (223s)
+  S1 13,382/13,382: kept 0.55M (228s)
+wrote artifacts/cand\train_dev_v3d1: 914,339 pairs over 22,132 S1 with candidates (450s)

@@ -1,0 +1,12 @@
+# Core (Stages 0-4). Tested on Python 3.12; 3.10/3.11 also fine.
+numpy==2.4.4
+pandas==3.0.6
+pyarrow==25.0.1
+polars==1.44.2       # pinned: seeded hashes (blocking keys, tie-breaks) are stable only within a version
+anyascii==0.3.3
+scikit-learn==1.9.1
+lightgbm==4.7.0
+rapidfuzz==3.14.6
+pyyaml==6.0.3
+psutil==7.2.2        # scripts/peakmem.py (peak RSS logging)
+pytest==9.1.1

@@ -1,0 +1,5 @@
+  idf: 2,159,650 tokens (0s)
+  records: s1 22,132, s23 875,352 (3s)
+  pairs 927,127/927,127 (30s)
+  positives 73,318 of 927,127
+wrote artifacts/feat\train_dev.parquet: 927,127 rows x 80 cols

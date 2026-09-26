@@ -1,0 +1,25 @@
+  split India: best_iter 207, 13s
+  split US: best_iter 315, 20s
+OOF AUC 0.99742  AP 0.97909
+shape: (15, 2)
++--------------+----------+
+| feature      | gain     |
+| ---          | ---      |
+| str          | f64      |
++=========================+
+| n_fam        | 0.263341 |
+| r_all        | 0.174473 |
+| s_mix        | 0.110561 |
+| s_all        | 0.096665 |
+| num_conflict | 0.039548 |
+| addr_wov_min | 0.039257 |
+| addr_unm_b   | 0.030042 |
+| nm_ph_ratio  | 0.026265 |
+| name_unm_b   | 0.022225 |
+| nm_partial   | 0.022076 |
+| num_ov_min   | 0.021475 |
+| nm_comp_jw   | 0.012359 |
+| nt_n_b       | 0.011146 |
+| ad_tset      | 0.010923 |
+| nm_jw        | 0.009108 |
++--------------+----------+

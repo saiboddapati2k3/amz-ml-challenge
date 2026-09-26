@@ -1,0 +1,6 @@
+US    pooled 5f AUC 0.99979 AP 0.9978 | tau 0.75: F 0.9712 empty 0.059 m/S1 3.27 | retuned tau 0.75: F 0.9712 empty 0.059 m/S1 3.27
+US    LOCO      AUC 0.99905 AP 0.9912 | tau 0.75: F 0.9455 empty 0.056 m/S1 3.22 | retuned tau 0.9: F 0.9500 empty 0.064 m/S1 3.08
+US    truth: empty 0.057 m/S1 3.45
+India pooled 5f AUC 0.99972 AP 0.9968 | tau 0.75: F 0.9436 empty 0.067 m/S1 3.09 | retuned tau 0.7: F 0.9437 empty 0.065 m/S1 3.12
+India LOCO      AUC 0.99431 AP 0.9552 | tau 0.75: F 0.8400 empty 0.099 m/S1 2.75 | retuned tau 0.75: F 0.8400 empty 0.099 m/S1 2.75
+India truth: empty 0.055 m/S1 3.46

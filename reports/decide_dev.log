@@ -1,0 +1,20 @@
+ECE raw 0.0008   isotonic 0.0002
+{'rule': 'top1 always', 'macro_f05': 0.6355, 'micro_precision': 0.9381, 'micro_recall': 0.2713, 'f05_India': 0.6308, 'f05_US': 0.6386}
+{'rule': 'threshold p>=0.3', 'macro_f05': 0.9501, 'micro_precision': 0.9677, 'micro_recall': 0.9394, 'f05_India': 0.9334, 'f05_US': 0.9611}
+{'rule': 'threshold p>=0.4', 'macro_f05': 0.9543, 'micro_precision': 0.9743, 'micro_recall': 0.9352, 'f05_India': 0.9373, 'f05_US': 0.9654}
+{'rule': 'threshold p>=0.5', 'macro_f05': 0.9574, 'micro_precision': 0.9795, 'micro_recall': 0.9309, 'f05_India': 0.9406, 'f05_US': 0.9683}
+{'rule': 'threshold p>=0.6', 'macro_f05': 0.9593, 'micro_precision': 0.9833, 'micro_recall': 0.9262, 'f05_India': 0.9428, 'f05_US': 0.9701}
+{'rule': 'expF iso one_owner=none', 'macro_f05': 0.959, 'micro_precision': 0.9883, 'micro_recall': 0.9139, 'f05_India': 0.9423, 'f05_US': 0.97}
+{'rule': 'expF iso one_owner=soft', 'macro_f05': 0.9591, 'micro_precision': 0.9884, 'micro_recall': 0.9139, 'f05_India': 0.9423, 'f05_US': 0.9701}
+{'rule': 'expF iso one_owner=hard', 'macro_f05': 0.9591, 'micro_precision': 0.9883, 'micro_recall': 0.9139, 'f05_India': 0.9423, 'f05_US': 0.9701}
+{'rule': 'expF raw', 'macro_f05': 0.9592, 'micro_precision': 0.9878, 'micro_recall': 0.9162, 'f05_India': 0.9426, 'f05_US': 0.9701}
+                   rule  macro_f05  micro_precision  micro_recall  f05_India  f05_US
+            top1 always     0.6355           0.9381        0.2713     0.6308  0.6386
+       threshold p>=0.3     0.9501           0.9677        0.9394     0.9334  0.9611
+       threshold p>=0.4     0.9543           0.9743        0.9352     0.9373  0.9654
+       threshold p>=0.5     0.9574           0.9795        0.9309     0.9406  0.9683
+       threshold p>=0.6     0.9593           0.9833        0.9262     0.9428  0.9701
+expF iso one_owner=none     0.9590           0.9883        0.9139     0.9423  0.9700
+expF iso one_owner=soft     0.9591           0.9884        0.9139     0.9423  0.9701
+expF iso one_owner=hard     0.9591           0.9883        0.9139     0.9423  0.9701
+               expF raw     0.9592           0.9878        0.9162     0.9426  0.9701

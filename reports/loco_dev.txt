@@ -1,0 +1,6 @@
+US     in-country 5f      F@0.75 0.9714  best tau 0.75: 0.9714  P 0.9907 R 0.9372  mean p 0.0811
+US     both countries 5f  F@0.75 0.9712  best tau 0.75: 0.9712  P 0.9903 R 0.9382  mean p 0.0812
+US     LOCO (other only)  F@0.75 0.9455  best tau 0.9: 0.9500  P 0.9737 R 0.9078  mean p 0.0826
+India  in-country 5f      F@0.75 0.9448  best tau 0.75: 0.9448  P 0.9858 R 0.8828  mean p 0.0749
+India  both countries 5f  F@0.75 0.9436  best tau 0.75: 0.9436  P 0.9864 R 0.8809  mean p 0.0750
+India  LOCO (other only)  F@0.75 0.8400  best tau 0.75: 0.8400  P 0.9459 R 0.7525  mean p 0.0700

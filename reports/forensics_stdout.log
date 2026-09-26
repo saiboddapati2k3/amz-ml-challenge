@@ -1,0 +1,59 @@
+system RAM 7.7 GB, available 0.3 GB; chunksize 50,000, sample 100,000
+[   20.0s] ground truth: 2,206,821 rows, 7,638,365 pairs: 20.0s, rss 144 MB, peak 490 MB
+  s1: 500,000 rows, rss 293 MB
+  s1: 1,000,000 rows, rss 167 MB
+  s1: 1,500,000 rows, rss 189 MB
+  s1: 2,000,000 rows, rss 162 MB
+[  131.9s] S1 pass: 2,206,821 rows: 111.8s, rss 347 MB, peak 490 MB
+  s2: 500,000 rows, rss 349 MB
+  s2: 1,000,000 rows, rss 336 MB
+  s2: 1,500,000 rows, rss 364 MB
+  MemoryError, retry 1/3 after 2s
+  s2: 2,000,000 rows, rss 385 MB
+  s2: 2,500,000 rows, rss 425 MB
+  s2: 3,000,000 rows, rss 452 MB
+  s2: 3,500,000 rows, rss 472 MB
+  s2: 4,000,000 rows, rss 495 MB
+  s2: 4,500,000 rows, rss 394 MB
+  s2: 5,000,000 rows, rss 395 MB
+[  445.6s] S2 pass: 5,034,616 rows: 313.8s, rss 190 MB, peak 684 MB
+  s3: 500,000 rows, rss 365 MB
+  s3: 1,000,000 rows, rss 374 MB
+  s3: 1,500,000 rows, rss 400 MB
+  s3: 2,000,000 rows, rss 396 MB
+  s3: 2,500,000 rows, rss 386 MB
+  s3: 3,000,000 rows, rss 372 MB
+  s3: 3,500,000 rows, rss 373 MB
+  s3: 4,000,000 rows, rss 385 MB
+  s3: 4,500,000 rows, rss 389 MB
+  s3: 5,000,000 rows, rss 385 MB
+[  765.6s] S3 pass: 5,285,603 rows: 320.0s, rss 162 MB, peak 757 MB
+[  776.0s] exact statistics: 10.4s, rss 597 MB, peak 963 MB
+[  784.1s] sampling: 109,200 pairs, 20,000 corroboration S1s, 2,000 look-alike S1s; 294,643 records to fetch: 8.1s, rss 408 MB, peak 963 MB
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "D:\Downloads\business_entity_resolution\business_entity_resolution\src\analysis\forensics.py", line 644, in <module>
+    main()
+  File "D:\Downloads\business_entity_resolution\business_entity_resolution\src\analysis\forensics.py", line 522, in main
+    m = np.isin(ids, need_ids)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\numpy\lib\_arraysetops_impl.py", line 1075, in isin
+    return _isin(element, test_elements, assume_unique=assume_unique,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\numpy\lib\_arraysetops_impl.py", line 930, in _isin
+    ar1, rev_idx = np.unique(ar1, return_inverse=True)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\numpy\lib\_arraysetops_impl.py", line 296, in unique
+    ret = _unique1d(ar, return_index, return_inverse, return_counts,
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\numpy\lib\_arraysetops_impl.py", line 407, in _unique1d
+    imask = np.cumsum(mask) - 1
+            ^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\numpy\_core\fromnumeric.py", line 2914, in cumsum
+    return _wrapfunc(a, 'cumsum', axis=axis, dtype=dtype, out=out)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\numpy\_core\fromnumeric.py", line 54, in _wrapfunc
+    return bound(*args, **kwds)
+           ^^^^^^^^^^^^^^^^^^^^
+numpy._core._exceptions._ArrayMemoryError: Unable to allocate 391. KiB for an array with shape (50000,) and data type int64

@@ -1,0 +1,29 @@
+train s1: 2,206,821 rows in 12s
+train s2: 5,034,616 rows in 48s
+train s3: 5,285,603 rows in 42s
+test s1: 1,732,544 rows in 11s
+test s2: 4,887,273 rows in 48s
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "D:\Downloads\business_entity_resolution\business_entity_resolution\src\prep.py", line 197, in <module>
+    main()
+  File "D:\Downloads\business_entity_resolution\business_entity_resolution\src\prep.py", line 192, in main
+    rows = prep_file(path, os.path.join(args.out, f"{args.split}_s{n}"))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Downloads\business_entity_resolution\business_entity_resolution\src\prep.py", line 174, in prep_file
+    normalize(chunk).write_parquet(os.path.join(out_dir, f"part-{i:03d}.parquet"),
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\polars\dataframe\frame.py", line 4375, in write_parquet
+    self.lazy().sink_parquet(
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\polars\lazyframe\frame.py", line 3021, in sink_parquet
+    return _select_engine(engine).sink_parquet(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\polars\lazyframe\engine.py", line 616, in sink_parquet
+    return self._finish_sink(ldf_py, lazy=lazy, optimizations=optimizations)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\polars\lazyframe\engine.py", line 522, in _finish_sink
+    self.collect(lf, optimizations=optimizations)
+  File "C:\Users\priya\AppData\Roaming\Python\Python312\site-packages\polars\lazyframe\engine.py", line 443, in collect
+    return wrap_df(ldf.collect(self.name, callback))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+polars.exceptions.ComputeError: parquet: File out of specification: underlying IO error: Allocation error : not enough memory

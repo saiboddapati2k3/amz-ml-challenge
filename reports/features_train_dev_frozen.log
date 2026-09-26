@@ -1,0 +1,5 @@
+  idf: 2,159,650 tokens (0s)
+  pairs 927,282 (53s)
+  positives 73,325 of 927,282
+wrote artifacts/feat\train_dev_frozen.parquet: 927,282 rows x 80 cols
+peak RSS 2.25 GB, wall 61s

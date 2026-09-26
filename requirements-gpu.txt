@@ -1,0 +1,6 @@
+# Neural stages (embedding blocker, cross-encoder). Install torch FIRST from
+# https://pytorch.org using the wheel that matches your CUDA version, then:
+torch==2.14.0
+transformers==5.17.0
+sentence-transformers==6.1.0
+faiss-cpu==1.15.1
