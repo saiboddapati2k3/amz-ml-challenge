@@ -38,6 +38,9 @@ python utils/validate_submission.py -m output/matching_results.tsv -c output/can
 ```
 Smoke test without real data: `python scripts/make_synthetic.py --out dataset_synth` then point `--data` at it.
 
+Full runs (prep → blocking → training → lockbox → test submission) go on Kaggle: see [KAGGLE.md](KAGGLE.md)
+and `notebooks/kaggle_pipeline.ipynb`.
+
 ## Rules we enforce
 No external data/APIs/geocoding. Splits by S1 entity only. Models MIT/Apache-2.0, ≤ 8B params.
 `candidate_pairs.tsv` = exactly the pairs the final model scores.
