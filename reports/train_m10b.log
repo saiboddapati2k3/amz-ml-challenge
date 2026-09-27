@@ -1,2 +1,30 @@
   loaded 9,247,338 rows x 73 features from 89 parts (2.5 GB)
   split 0: best_iter 1805, 539s
+  split 1: best_iter 1683, 724s
+  split 2: best_iter 1568, 615s
+  split 3: best_iter 1456, 542s
+  split 4: best_iter 1957, 551s
+OOF AUC 0.99987  AP 0.99859
+shape: (15, 2)
++--------------+----------+
+| feature      | gain     |
+| ---          | ---      |
+| str          | f64      |
++=========================+
+| n_fam        | 0.343967 |
+| r_all        | 0.220869 |
+| s_mix        | 0.050946 |
+| s_all        | 0.045335 |
+| num_ov_min   | 0.041923 |
+| addr_unm_b   | 0.033289 |
+| nm_partial   | 0.029172 |
+| addr_wov_min | 0.027839 |
+| name_unm_b   | 0.022485 |
+| num_conflict | 0.019709 |
+| nm_ph_ratio  | 0.01891  |
+| num_n_b      | 0.014354 |
+| ad_tset      | 0.013283 |
+| lg_same      | 0.010666 |
+| nt_n_b       | 0.010129 |
++--------------+----------+
+peak RSS 2.12 GB, wall 2992s

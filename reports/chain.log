@@ -9,3 +9,9 @@
 [13:43:53] features for train10b
 [13:49:38] features train10b done (exit 0)
 [13:49:38] training m10b
+[14:39:30] m10b trained (exit 0)
+[14:42:19] check m10f3: | lockbox | ALL | 30000 | 0.9667 | 0.9655 | 0.9679 | 0.9649 | 0.9668 | 0.9923 | 0.9240 | 0.9852 | 0.0623 | 0.0570 |
+[14:44:56] check m10bf3: | lockbox | ALL | 30000 | 0.9666 | 0.9653 | 0.9679 | 0.9638 | 0.9668 | 0.9923 | 0.9239 | 0.9852 | 0.0623 | 0.0570 |
+wrote 2 averaged parts to artifacts/score/train_check_n1_v3h1__ens (2 models)
+[14:45:00] check ens: | lockbox | ALL | 30000 | 0.9670 | 0.9658 | 0.9683 | 0.9643 | 0.9672 | 0.9928 | 0.9238 | 0.9852 | 0.0623 | 0.0570 |
+[14:45:00] test scoring with m10b folds 0-2

@@ -12,14 +12,21 @@ We use a blocking + pairwise classifier + constrained decision pipeline, tuned f
 metric (macro F0.5 per Source-1 entity):
 
 - A multi-key weighted inverted index generates about 42 candidates per Source-1 (S1) record.
-- A LightGBM ensemble scores every candidate pair on 73 label-free string, number and blocking
-  features.
-- A fine-tuned **cross-encoder** (MiniLM, 22M parameters) rereads the 4% of pairs LightGBM is unsure
-  about, and the two scores are blended.
-- A decision layer enforces a fact we verified on all 7.6M training pairs: **every S2/S3 record belongs
-  to at most one S1** (S1 is deduplicated). Only the best-scoring S1 keeps each record.
+- LightGBM (3 fold models trained on a 10% sample of train, 9.2M pairs) scores every candidate pair on
+  73 label-free string, number and blocking features.
+- A fine-tuned **cross-encoder** (MiniLM, 22M parameters) rereads the pairs LightGBM is unsure about
+  (7% of test pairs). The two scores are blended for countries in the training data, and the
+  cross-encoder may only veto for the unseen country.
+- A decision layer enforces two facts verified on the training labels:
+  - **Every S2/S3 record belongs to at most one S1** (0 of 7.6M records shared). Only the best-scoring
+    S1 keeps each record.
+  - **A candidate whose name carries the record's country word while the S1 name doesn't is a different
+    entity** (0 true matches in ~177k such train pairs).
 
-The unseen country (France) gets no labels and no hand-written country logic. Its rarity statistics
+Public leaderboard: 0.942 (baseline) → **0.961** (upload 4), final upload [FINAL].
+
+The unseen country (France) gets no labels and no hand-written France logic; every rule is stated
+for "the record's country" or "countries absent from the training data". Its rarity statistics
 come from its own records, and its abbreviations were found by a label-free comparison of S2/S3 against
 S1.
 
@@ -49,6 +56,14 @@ EDA on train (US, India) and label-free statistics on test:
 - **France (test only):** names are often "<city> <generic word>" ("Bordeaux Amicale"), and the S2/S3
   addresses abbreviate heavily (25% use "R" for "Rue"). Many near-duplicate S1 businesses sit on the
   same street.
+- **Sister entities:** the generator never *adds* the country word to a copy. A record like "Triangle
+  Gipsy Jeunes **France** SARL" at another house number is a different business from S1 "Triangle Gipsy
+  Jeunes SARL":
+  - India train: 0 true matches among 158,579 candidate-only "india" pairs.
+  - US train: 0 of ~18,800 "us/usa/america/american" pairs.
+
+  Our first France normalization dropped the word, turned these sisters into apparent duplicates, and
+  cost 0.004 on the leaderboard (0.9456 → 0.942) until the country-word rule fixed it.
 
 ### 2.2 Solution Strategy
 
@@ -64,7 +79,10 @@ pairs + constrained (one-owner) decision layer.
 3. **Cascade reranking:** a small cross-encoder, fine-tuned on the pairs where LightGBM is uncertain,
    rescores only that band (2% of train pairs, 4% of test pairs). Their logits are averaged. On a
    fresh 30k-S1 check set: 0.9670 → 0.9733.
-4. **Transductive, label-free rarity:** token idf and blocking-key weights are computed per country on
+4. **Train-verified decision rules:** the one-owner rule and the country-word rule are hard
+   constraints read off the ground truth (zero counterexamples). As generic rules they apply to any
+   country, including unseen ones.
+5. **Transductive, label-free rarity:** token idf and blocking-key weights are computed per country on
    the corpus being resolved, and idf-scale features are divided by the country's ln N. They transfer
    to a new country without retuning.
 
@@ -125,9 +143,10 @@ Idf-scale features are divided by the country's ln N (leave-one-country-out test
 both directions).
 
 **Model type:** LightGBM binary classifier (127 leaves, learning rate 0.05, feature fraction 0.8,
-bagging 0.8, L2 1.0, early stopping on an S1-grouped inner holdout, about 1,800 trees). Two models are
-each trained with 5 S1-grouped folds on a disjoint random 10% of train S1 (220,682 S1, 9.2M pairs each).
-The submission averages folds 0-2 of both models (6 models).
+bagging 0.8, L2 1.0, early stopping on an S1-grouped inner holdout, about 1,800 trees). It is trained
+with 5 S1-grouped folds on a random 10% of train S1 (220,682 S1, 9,247,141 pairs; the lockbox and
+check sets are excluded). The submission averages folds 0-2: 3 models, which cuts inference cost by
+40% for a check-set difference of -0.0003.
 
 **Cross-encoder (stage 2):** `cross-encoder/ms-marco-MiniLM-L-6-v2` (Apache-2.0, 22M parameters),
 fine-tuned for 2 epochs on a Kaggle T4 (AdamW, lr 3e-5, batch 256, fp16, max length 128). Training
@@ -142,7 +161,11 @@ set and confirmed on the other half.
 - τ comes from out-of-fold macro F0.5 on the training sample, and is adjusted for the one-owner rule on
   full-density held-out train scores.
 - Test has more orphan distractors than train, so τ was then checked on the leaderboard.
-- Final: one-owner hard, τ = [TAU].
+- Final:
+  - cross-encoder blend w = 0.5 for training countries, veto-only for unseen countries
+  - country-word rule
+  - one-owner hard
+  - τ = 0.70 (the blend's optimum on both check-set halves)
 
 ---
 
@@ -152,9 +175,11 @@ set and confirmed on the other half.
 |---|---|---|
 | Baseline (1% sample model, τ 0.75) | dev OOF 0.9605, lockbox 0.9603 | 0.942 |
 | + one-owner (hard) | India full-density +0.26 (τ0.75), +0.31 (τ0.65) | 0.945644 |
-| + 10% training sample (m10), France normalization | dev OOF 0.9664, fresh check set 0.9670 (+0.52) | [U3] |
-| + cross-encoder blend on uncertain pairs | check set 0.9733 (+0.64; cross-fitted +0.57/+0.68) | [U4] |
-| + second model on a disjoint 10% (ensemble) | check set [ENS] | [U5] |
+| + 10% training sample (m10), France normalization n2 | dev OOF 0.9664, fresh check set 0.9670 (+0.52) | 0.942 (France sister entities, see 2.1) |
+| + country-word rule + cross-encoder blend (US/India), τ 0.70 | check set 0.9736 (cross-fitted +0.64/+0.70) | **0.961** |
+| + cross-encoder veto for the unseen country | US/India proxy: veto-only +0.28 | [FINAL] |
+
+A second LightGBM on a disjoint 10% sample added only +0.03 on the check set, so it wasn't used.
 
 - France: an upload with the France rows emptied (0.815) gives France ≈ 0.87-0.90, against about 0.95 for US+India.
 - **Common false positives (wrong merges):**

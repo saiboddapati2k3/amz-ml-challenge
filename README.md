@@ -49,23 +49,37 @@ python -m src.features --split train --cand artifacts/cand/train_full_n1_v3h1 \
     --s1-ids artifacts/splits/train10_s1.parquet --tag train10_n1_v3h1       # artifacts/feat/train10_n1_v3h1/
 python -m src.train --feat artifacts/feat/train10_n1_v3h1 --s1-ids artifacts/splits/train10_s1.parquet --tag m10
 
-# 4. Test: score every candidate, keep one owner per S2/S3 record, threshold, write both TSVs
-scripts/predict_loop.sh --split test --norm artifacts/norm_n2 --cand artifacts/cand/test_n2_v3h1 \
-    --models "artifacts/model/model_m10_*.txt" --tau TAU_FINAL --one-owner hard --out output
-python utils/validate_submission.py -m output/matching_results.tsv -c output/candidate_pairs.tsv -t dataset/test
+# 4. Test: LightGBM scores for every candidate (folds 0-2 of m10; cached per part)
+ln -s test_n2_v3h1 artifacts/cand/test_n2_v3h1__m10f3
+scripts/predict_loop.sh --split test --norm artifacts/norm_n2 --cand artifacts/cand/test_n2_v3h1__m10f3 \
+    --models "artifacts/model/model_m10_[012].txt" --tau 0.75 --no-outputs
 ```
 
-Cross-encoder stage (GPU; we used a Kaggle T4 with `notebooks/kaggle_ce.ipynb`):
+5. Cross-encoder on the uncertain band (GPU; we used a Kaggle T4 with `notebooks/kaggle_ce.ipynb`):
 ```bash
-python scripts/ce_export.py train artifacts/model/oof_m10.parquet ce_data/ce_train.parquet          # 700k pairs
-python scripts/ce_export.py pairs artifacts/score/test_n2_v3h1__<model> ce_data/ce_test.parquet \
-    --split test --norm artifacts/norm_n2 --lo 0.0003 --hi 0.9997                                  # uncertain band
-# notebooks/kaggle_ce.ipynb: fine-tune on ce_train, score ce_test -> ce_scores_test.parquet
-python scripts/ce_apply.py artifacts/score/test_n2_v3h1__<model> ce_data/ce_scores_test.parquet \
-    artifacts/score/test_n2_v3h1__final --w 0.55
-ln -s test_n2_v3h1 artifacts/cand/test_n2_v3h1__final                                             # cached scores
+python scripts/ce_export.py train artifacts/model/oof_m10.parquet ce_data/ce_train.parquet       # 700k training pairs
+python scripts/ce_export.py pairs artifacts/score/train_check_n1_v3h1__m10 ce_data/ce_check.parquet   # validation
+python scripts/ce_export.py pairs artifacts/score/test_n2_v3h1__m10f3 ce_data/ce_test.parquet \
+    --split test --norm artifacts/norm_n2 --lo 0.0003 --hi 0.9997                               # 7.0M test pairs
+# notebooks/kaggle_ce.ipynb: fine-tune on ce_train, score ce_check + ce_test -> ce_scores_{check,test}.parquet
+python scripts/ce_blend_eval.py ce_data/ce_scores_check.parquet artifacts/score/train_check_n1_v3h1__m10 \
+    artifacts/splits/check_s1.parquet                                                            # picks w=0.5, tau=0.7
+```
+
+6. Decision layer and submission files:
+```bash
+# split the cross-encoder scores: countries in its training data (US, India) vs unseen countries (France)
+python scripts/ce_split.py ce_data/ce_scores_test.parquet ce_data/ce_scores_test_seen.parquet ce_data/ce_scores_test_unseen.parquet
+python scripts/ce_apply.py artifacts/score/test_n2_v3h1__m10f3 ce_data/ce_scores_test_seen.parquet \
+    artifacts/score/test_n2_v3h1__m10f3ce --w 0.5                      # blend (US, India)
+python scripts/ce_apply.py artifacts/score/test_n2_v3h1__m10f3ce ce_data/ce_scores_test_unseen.parquet \
+    artifacts/score/test_n2_v3h1__m10f3cev --w 0.5 --veto              # veto only (unseen countries)
+python scripts/country_rule.py artifacts/score/test_n2_v3h1__m10f3cev artifacts/score/test_n2_v3h1__final \
+    --norm artifacts/norm_n2 --split test                              # sister entities
+ln -s test_n2_v3h1 artifacts/cand/test_n2_v3h1__final                  # every part cached: nothing re-scored
 python -m src.predict --split test --norm artifacts/norm_n2 --cand artifacts/cand/test_n2_v3h1__final \
-    --models "artifacts/model/model_m10_*.txt" --tau TAU_FINAL --one-owner hard --out output
+    --models "artifacts/model/model_m10_[012].txt" --tau 0.7 --one-owner hard --out output
+python utils/validate_submission.py -m output/matching_results.tsv -c output/candidate_pairs.tsv -t dataset/test
 ```
 
 Honest accuracy checks (all on train S1 the model never saw):

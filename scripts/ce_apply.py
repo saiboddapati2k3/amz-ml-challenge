@@ -19,6 +19,9 @@ ap.add_argument("src")
 ap.add_argument("ce")
 ap.add_argument("out")
 ap.add_argument("--w", type=float, default=0.55, help="weight of the LightGBM logit")
+ap.add_argument("--veto", action="store_true",
+                help="the cross-encoder may only lower a score: p = min(p_lgb, blend). Used for countries "
+                     "absent from the reranker's training data, where its additions are untested")
 args = ap.parse_args()
 ce = pl.read_parquet(args.ce).select("s1_eid", "cand_eid", "ce")
 os.makedirs(args.out, exist_ok=True)
@@ -27,7 +30,10 @@ n_all = n_ce = 0
 for path in sorted(glob.glob(os.path.join(args.src, "part-*.parquet"))):
     d = pl.read_parquet(path).join(ce, on=["s1_eid", "cand_eid"], how="left", maintain_order="left")
     z = args.w * lg("p") + (1 - args.w) * lg("ce")
-    d = d.with_columns(p=pl.when(pl.col("ce").is_not_null()).then(1 / (1 + (-z).exp())).otherwise(pl.col("p")).cast(pl.Float32))
+    blend = 1 / (1 + (-z).exp())
+    if args.veto:
+        blend = pl.min_horizontal(pl.col("p"), blend)
+    d = d.with_columns(p=pl.when(pl.col("ce").is_not_null()).then(blend).otherwise(pl.col("p")).cast(pl.Float32))
     n_all += d.height
     n_ce += d["ce"].is_not_null().sum()
     dst = os.path.join(args.out, os.path.basename(path))
