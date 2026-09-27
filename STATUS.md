@@ -21,6 +21,21 @@ Last updated 2026-09-27 (Mac). Newest findings first; the 2026-09-26 Windows not
   compete): none τ0.75 **0.94359** → hard τ0.75 **0.94615** (+0.26) → **hard τ0.65 0.94673 (+0.31)**;
   soft is at best 0.94657 (τ0.5). Chosen: hard, and one-owner lets the threshold drop ~0.1.
   (`reports/owner_eval_india_dev_frozen.csv`)
+- **Leaderboard: one-owner hard τ0.75 = 0.945** (vs 0.942): +0.3 on test, as predicted.
+- **Test has more orphan S2/S3 records** (label-free, India): 5.82 S2/S3 per S1 vs 4.68 in train, same
+  claims per S1 (3.10 vs 3.08), uncertain band (best p 0.2-0.75) 6.0% vs 3.7% of records. So there's
+  more false-positive risk on test than train shows: probe τ on the leaderboard, don't just lower it.
+- Test blocking with n2: 72,613,074 pairs. 7.2% of France candidate pairs change, 0.4-0.8% of US/India.
+- **m10 (10% sample, 220,682 S1, 9,247,141 pairs, 5 folds, ~1,800 trees each, 50 min, peak 1.7 GB):**
+  OOF AUC 0.99987 / AP 0.99858 (dev_frozen 0.99977 / 0.99757). Dev OOF at τ0.75 **0.96641** (US 0.97598,
+  India 0.95178) vs dev_frozen 0.96055: +0.59. Fresh check set (30k S1) **0.9670** vs 0.9618 (+0.52,
+  non-overlapping CIs). OOF-best τ without one-owner is 0.70-0.75.
+- Inference cost: m10 5 folds ≈ 195 s per 1M pairs (prediction dominates), so test takes ~3.9 h. The
+  submission uses folds 0-2 (~135 s/M, ~2.7 h) plus a second model m10b trained on a disjoint 10% sample
+  (`train10b_s1`); their scores are averaged per pair (`scripts/avg_scores.py`).
+- Blocking misses (dev, 3,965 pairs): native-script India 1,228; S2/S3 without address 1,130, of which
+  only 110 have a unique S1 name (the rest are shared by 6-50+ S1: not recoverable without false
+  positives); fully renamed or relocated records. No blocking rework before the deadline.
 - Per-source (S2/S3) thresholds: no gain on dev OOF (single τ 0.75 is best).
 - New splits: `train10_s1` (10% of train S1, incl. dev, excl. lockbox), `check_s1` (30k fresh
   holdout), `tune_s1` (the remaining 1.91M S1, for decision tuning at full density).

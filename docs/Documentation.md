@@ -1,7 +1,7 @@
 # ML Challenge 2026: Business Entity Resolution Solution
 
-**Team Name:** [Your Team Name]
-**Team Members:** [List all team members]
+**Team Name:** leakyReLU
+**Team Members:** Mayank Kumar (IIIT Tiruchirappalli), Priya Singh (IIIT Tiruchirappalli), Sai Boddapati (VIT Chennai), Harshita Singh (IIIT Tiruchirappalli)
 **Submission Date:** 27 September 2026
 
 ---

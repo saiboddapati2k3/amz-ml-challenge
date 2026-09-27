@@ -1,0 +1,6 @@
+[09:10:59] m10 trained
+[09:10:59] OOF m10 on train10 and on dev
+[09:11:05] check set with m10
+[09:15:22] check m10: | lockbox | ALL | 30000 | 0.9670 | 0.9657 | 0.9682 | 0.9661 | 0.9670 | 0.9925 | 0.9240 | 0.9852 | 0.0623 | 0.0570 |
+[09:15:22] test scoring with m10 (n2 candidates)
+[09:16:49] test scoring with m10 folds 0-2 (n2 candidates)

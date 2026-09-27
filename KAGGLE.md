@@ -1,5 +1,10 @@
 # Running the pipeline on Kaggle
 
+> **Note (2026-09-27):** the final submission was produced locally with the commands in
+> `README.md` ("Reproduce the final submission"): normalization rules n1 for train and n2 for test,
+> the m10 model and `--one-owner hard`. This notebook reproduces the earlier baseline (dev model,
+> no one-owner). It still works for heavy runs, but pass the new options yourself.
+
 The Mac (8 GB) is for editing code and quick checks. Heavy runs go to a Kaggle notebook (about 30 GB of RAM,
 4 CPUs, free). The notebook is [`notebooks/kaggle_pipeline.ipynb`](notebooks/kaggle_pipeline.ipynb).
 
