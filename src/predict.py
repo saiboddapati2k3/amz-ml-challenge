@@ -56,10 +56,37 @@ def _lists(pairs: pl.DataFrame) -> pl.DataFrame:
                  .group_by("s1_eid", maintain_order=True).agg(ids=decode("cand_eid").str.join(",")))
 
 
+OWNER_MODES = ("none", "hard", "soft")
+
+
+def cand_stats(scores: pl.LazyFrame) -> pl.DataFrame:
+    """Per S2/S3 candidate over ALL scored S1: best score and score total (one-owner inputs)."""
+    return (scores.group_by("cand_eid").agg(p_best=pl.col("p").max(), p_sum=pl.col("p").sum())
+                  .collect(engine="streaming"))
+
+
+def owner_adjust(pairs: pl.DataFrame, stats: pl.DataFrame | None, mode: str) -> pl.DataFrame:
+    """S1 is deduplicated, so every S2/S3 record has at most one owner (train truth: 0 of 7.6M
+    records shared). 'hard' zeroes each pair that is not its candidate's best S1; 'soft' divides
+    by max(1, sum of the candidate's scores). Needs stats from the WHOLE split: a sample of S1
+    misses the competing owners."""
+    if mode == "none":
+        return pairs
+    pairs = pairs.join(stats, on="cand_eid", how="left")
+    if mode == "hard":
+        p = pl.when(pl.col("p") >= pl.col("p_best")).then(pl.col("p")).otherwise(0.0)
+    elif mode == "soft":
+        p = pl.col("p") / pl.max_horizontal(pl.col("p_sum"), pl.lit(1.0))
+    else:
+        raise ValueError(mode)
+    return pairs.with_columns(p=p.cast(pl.Float32)).drop("p_best", "p_sum")
+
+
 def write_outputs(out: str, s1_order: pl.DataFrame, scores: pl.LazyFrame, tau: float,
-                  batch: int = 200_000) -> None:
-    """matching_results.tsv (p >= tau) and candidate_pairs.tsv (every scored pair): one row per
-    S1 in file order. Streams over S1 batches, so the full split's pairs are never in memory."""
+                  batch: int = 200_000, owner: str = "none", stats: pl.DataFrame | None = None) -> None:
+    """matching_results.tsv (p >= tau after the one-owner rule) and candidate_pairs.tsv (every
+    scored pair): one row per S1 in file order. Streams over S1 batches, so the full split's
+    pairs are never in memory."""
     os.makedirs(out, exist_ok=True)
     files = {"matched_entity_ids": os.path.join(out, "matching_results.tsv"),
              "candidate_entity_ids": os.path.join(out, "candidate_pairs.tsv")}
@@ -70,8 +97,8 @@ def write_outputs(out: str, s1_order: pl.DataFrame, scores: pl.LazyFrame, tau: f
         for lo in range(0, s1_order.height, batch):
             b = s1_order.slice(lo, batch).select("entity_id", "s1_eid")
             sc = scores.join(b.lazy().select("s1_eid"), on="s1_eid", how="semi").collect()
-            for h, pairs in (("matched_entity_ids", sc.filter(pl.col("p") >= tau)),
-                             ("candidate_entity_ids", sc)):
+            matched = owner_adjust(sc, stats, owner).filter(pl.col("p") >= tau)
+            for h, pairs in (("matched_entity_ids", matched), ("candidate_entity_ids", sc)):
                 rows = (b.join(_lists(pairs), on="s1_eid", how="left", maintain_order="left")
                          .select("entity_id", pl.col("ids").fill_null("")))
                 handles[h].write(rows.write_csv(separator="\t", quote_style="never",
@@ -96,6 +123,12 @@ def main():
     ap.add_argument("--max-parts", type=int, default=0,
                     help="score at most N new parts, then exit with code 3 (run in a loop: memory "
                          "is not returned to the OS between parts, so long runs start swapping)")
+    ap.add_argument("--one-owner", default="none", choices=OWNER_MODES,
+                    help="each S2/S3 record keeps at most one S1 (computed over every scored pair)")
+    ap.add_argument("--no-outputs", action="store_true", help="only score (e.g. the full train split)")
+    ap.add_argument("--feat-ids", default=None,
+                    help="parquet with eid: also save the features of these S1 (train only, with labels y)")
+    ap.add_argument("--feat-out", default=None, help="directory for the saved feature parts")
     args = ap.parse_args()
     lg = lambda m: print(m, flush=True)
     t0 = time.time()
@@ -105,6 +138,13 @@ def main():
     os.makedirs(score_dir, exist_ok=True)
     models, names = load_models(args.models)
     idf = token_df(args.norm, args.split)
+    keep = truth = None
+    if args.feat_ids:
+        from src.eval.blocking_recall import truth_pairs
+        keep = pl.read_parquet(args.feat_ids).select(pl.col("eid").alias("s1_eid"))
+        truth = truth_pairs(os.path.join(args.data, "train", "train_ground_truth.tsv")).select(
+            "s1_eid", "cand_eid", y=pl.lit(1, pl.Int8))
+        os.makedirs(args.feat_out, exist_ok=True)
     parts = sorted(glob.glob(os.path.join(cand_dir, "part-*.parquet")))
     lg(f"{args.split}: {len(parts)} candidate parts, {len(models)} fold models, {len(names)} features")
     done_now = 0
@@ -118,6 +158,12 @@ def main():
         done_now += 1
         cand = pl.read_parquet(path)
         f = build_part(args.norm, args.split, cand, idf)
+        if keep is not None:  # written before the score, so a finished score part implies its features
+            fs = (f.join(keep, on="s1_eid", how="semi").join(truth, on=["s1_eid", "cand_eid"], how="left")
+                   .with_columns(pl.col("y").fill_null(0)))
+            fdst = os.path.join(args.feat_out, os.path.basename(path))
+            fs.write_parquet(fdst + ".tmp")
+            os.replace(fdst + ".tmp", fdst)
         (f.select("s1_eid", "cand_eid", "src", "script_b").with_columns(p=pl.Series(score(models, names, f)))
           .write_parquet(dst + ".tmp"))
         os.replace(dst + ".tmp", dst)  # a crash never leaves a half-written part that looks done
@@ -126,20 +172,27 @@ def main():
     del idf
 
     scores = pl.scan_parquet(os.path.join(score_dir, "part-*.parquet"))
+    if args.no_outputs:
+        lg(f"scores in {score_dir} ({time.time() - t0:.0f}s)")
+        return
+    stats = cand_stats(scores) if args.one_owner != "none" else None
     s1_order = (pl.read_csv(os.path.join(args.data, args.split, f"{args.split}_source1.tsv"), **READ_KW,
                             columns=["entity_id", "country"])
                   .with_columns(s1_eid=encode_id_expr("entity_id"), country=pl.col("country").fill_null("").str.strip_chars()))
     if args.s1_ids:
         s1_order = s1_order.join(pl.read_parquet(args.s1_ids).select(pl.col("eid").alias("s1_eid")),
                                  on="s1_eid", how="semi", maintain_order="left")
-    write_outputs(args.out, s1_order, scores, args.tau)
+    write_outputs(args.out, s1_order, scores, args.tau, owner=args.one_owner, stats=stats)
     lg(f"  outputs written ({time.time() - t0:.0f}s)")
 
     # sanity statistics per country (compare the unseen country with train OOF: empty ~0.06, ~3.4/S1)
     s1c = s1_order.select("s1_eid", "country").lazy()
-    per_s1 = (scores.group_by("s1_eid").agg(n=(pl.col("p") >= args.tau).sum(), n_cand=pl.len(),
-                                            n_native=(pl.col("script_b") == 2).sum())
+    per_s1 = (scores.group_by("s1_eid").agg(n_cand=pl.len(), n_native=(pl.col("script_b") == 2).sum())
                     .collect(engine="streaming"))
+    matched = owner_adjust(scores.filter(pl.col("p") >= args.tau).select("s1_eid", "cand_eid", "p")
+                                 .collect(engine="streaming"), stats, args.one_owner)
+    per_s1 = per_s1.join(matched.filter(pl.col("p") >= args.tau).group_by("s1_eid").agg(n=pl.len()),
+                         on="s1_eid", how="left").with_columns(pl.col("n").fill_null(0))
     st = (s1c.join(per_s1.lazy(), on="s1_eid", how="left").fill_null(0)
              .group_by("country").agg(s1=pl.len(), empty_share=(pl.col("n") == 0).mean(),
                                       matches_per_s1=pl.col("n").mean(), p95=pl.col("n").quantile(0.95),
@@ -152,7 +205,8 @@ def main():
     st.write_csv(os.path.join(args.out, "prediction_stats.csv"))
     n_scored, n_matched = int(per_s1["n_cand"].sum()), int(per_s1["n"].sum())
     with open(os.path.join(args.out, "run_meta.json"), "w") as fh:
-        json.dump({"split": args.split, "tau": args.tau, "models": sorted(glob.glob(args.models)),
+        json.dump({"split": args.split, "tau": args.tau, "one_owner": args.one_owner,
+                   "models": sorted(glob.glob(args.models)),
                    "cand": cand_dir, "pairs_scored": n_scored, "pairs_matched": n_matched,
                    "s1": s1_order.height, "seconds": round(time.time() - t0)}, fh, indent=1)
     lg(f"done: {n_scored:,} scored, {n_matched:,} matched, {s1_order.height:,} S1 ({time.time() - t0:.0f}s)")

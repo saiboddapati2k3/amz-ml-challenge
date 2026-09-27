@@ -1,0 +1,26 @@
+train: 89 candidate parts, 5 fold models, 73 features
+  part 1/89: 1,064,459 pairs (86s)
+  part 2/89: 1,063,691 pairs (176s)
+  part 3/89: 1,065,166 pairs (269s)
+  part 4/89: 1,065,265 pairs (361s)
+  part 5/89: 1,066,699 pairs (448s)
+  part 6/89: 1,066,128 pairs (534s)
+  part 7/89: 1,063,252 pairs (626s)
+  part 8/89: 1,065,540 pairs (736s)
+  part 9/89: 1,063,497 pairs (823s)
+  part 10/89: 1,065,196 pairs (940s)
+  part 11/89: 1,064,813 pairs (1077s)
+  part 12/89: 1,064,954 pairs (1239s)
+  stopping after 12 new parts (--max-parts); re-run to continue
+peak RSS 2.41 GB, wall 1241s
+train: 89 candidate parts, 5 fold models, 73 features
+  part 13/89: 1,065,253 pairs (159s)
+  part 14/89: 1,064,755 pairs (301s)
+  part 15/89: 1,065,807 pairs (434s)
+  part 16/89: 1,065,078 pairs (545s)
+  part 17/89: 1,064,950 pairs (821s)
+  part 18/89: 1,064,515 pairs (1002s)
+  part 19/89: 1,064,759 pairs (1164s)
+  part 20/89: 1,064,903 pairs (2920s)
+  part 21/89: 1,064,719 pairs (3025s)
+  part 22/89: 1,063,281 pairs (3128s)

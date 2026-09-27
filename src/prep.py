@@ -43,7 +43,10 @@ LEGAL_CANON = {
     "pllc": "pllc", "pc": "pc", "pa": "pa", "ltee": "limited",
     "sarl": "sarl", "sas": "sas", "sasu": "sasu", "sa": "sa", "eurl": "eurl", "sci": "sci",
     "snc": "snc", "gmbh": "gmbh", "ag": "ag", "bv": "bv", "nv": "nv", "spa": "spa", "srl": "srl",
+    "cie": "company", "compagnie": "company",
 }
+# other name abbreviations (canonical <- variant); kept out of LEGAL_CANON so LEGAL_WORDS is unchanged
+NAME_CANON = {"ets": "etablissements", "st": "saint", "ste": "sainte"}
 LEGAL_WORDS = frozenset(list(LEGAL_CANON.values()) + [
     "private", "limited", "incorporated", "corporation", "company"])
 # words that carry no identity: honorifics, articles, generator noise ('(India)')
@@ -51,6 +54,9 @@ NOISE_WORDS = frozenset([
     "the", "and", "of", "a", "an", "ms", "m", "s", "mr", "mrs", "smt", "shri", "sri", "shree",
     "dr", "india", "le", "la", "les", "de", "du", "des", "et", "l", "d",
 ])
+# '(France)' is generator noise like '(India)'. Kept out of NOISE_WORDS: the blocker also uses those
+# words as phonetic stop skeletons, and 'france' shares its skeleton with 'frank'/'franco'.
+COUNTRY_NOISE = frozenset(["france"])
 ADDR_CANON = {
     "rd": "road", "st": "street", "str": "street", "ave": "avenue", "av": "avenue",
     "blvd": "boulevard", "bd": "boulevard", "bld": "boulevard", "ln": "lane", "dr": "drive",
@@ -60,6 +66,12 @@ ADDR_CANON = {
     "opp": "opposite", "mkt": "market", "ngr": "nagar", "clny": "colony", "col": "colony",
     "no": "number", "num": "number", "unit": "unit", "pmb": "pmb",
     "ft": "fort", "mt": "mount", "trl": "trail", "ter": "terrace", "pt": "point",
+    # street-type abbreviations whose long form is common in S1 (found label-free: frequent in
+    # S2/S3, near absent in S1). Pure renames for US/India, where the long forms don't occur.
+    "r": "rue", "all": "allee", "imp": "impasse", "rte": "route", "ch": "chemin", "che": "chemin",
+    "chem": "chemin", "crs": "cours", "q": "quai", "qu": "quai", "pas": "passage", "fbg": "faubourg",
+    "res": "residence", "ndeg": "number",  # anyascii('N°') = 'Ndeg'
+    "saint": "street", "sainte": "suite",  # 'St'/'Ste' already map to street/suite: keep one token
 }
 ADDR_NULL_RE = r"<null>|\b(?:null|none|nan|n/a)\b"
 
@@ -121,13 +133,13 @@ def normalize(df: pl.DataFrame) -> pl.DataFrame:
         _seg1=pl.col("_n").str.split("|").list.get(1, null_on_oob=True).fill_null("").str.strip_chars(),
     )
     df = df.with_columns(
-        name_n=_canon_tokens(pl.col("_n").str.replace_all(r"\|", " "), LEGAL_CANON),
-        _alias=_canon_tokens(pl.col("_seg1"), LEGAL_CANON),
+        name_n=_canon_tokens(pl.col("_n").str.replace_all(r"\|", " "), LEGAL_CANON | NAME_CANON),
+        _alias=_canon_tokens(pl.col("_seg1"), LEGAL_CANON | NAME_CANON),
         name_web=pl.col("_web").is_not_null().cast(pl.Int8),
     )
     df = df.with_columns(
-        name_core=_drop_tokens(pl.col("name_n"), LEGAL_WORDS | NOISE_WORDS),
-        name_alias=_drop_tokens(pl.col("_alias"), LEGAL_WORDS | NOISE_WORDS),
+        name_core=_drop_tokens(pl.col("name_n"), LEGAL_WORDS | NOISE_WORDS | COUNTRY_NOISE),
+        name_alias=_drop_tokens(pl.col("_alias"), LEGAL_WORDS | NOISE_WORDS | COUNTRY_NOISE),
     )
     df = df.with_columns(  # never leave the core empty
         name_core=pl.when(pl.col("name_core") == "").then(pl.col("name_n")).otherwise(pl.col("name_core")))

@@ -1,6 +1,25 @@
 # Status: Business Entity Resolution (Amazon ML Challenge 2026)
 
-Last updated 2026-09-26.
+Last updated 2026-09-27 (Mac). Newest findings first; the 2026-09-26 Windows notes follow.
+
+## 2026-09-27 findings
+- **Leaderboard decomposition:** 0.942 full; **0.815 with France emptied** → France ≈ 0.87-0.90 (depends
+  on France's unknown singleton share), US+India on test ≈ 0.949-0.955.
+- **One owner is a hard constraint:** 0 of 7,638,365 train S2/S3 records belong to two S1. In test
+  predictions (dev_frozen, τ 0.75), 3.6% of France pairs are claimed by several S1, against 0.4-0.7% for
+  US/India. `src/predict.py --one-owner hard|soft` enforces it, with statistics over every scored pair of
+  the split. It can't be measured on dev/lockbox (1-2% density), so `src/eval/owner_eval.py` evaluates it
+  on full-train scores (`artifacts/score/train_full_n1_v3h1`).
+- **France normalization (n2, `artifacts/norm_n2`):** abbreviations found label-free (frequent in
+  S2/S3, absent in S1): R/ALL/IMP/RTE/CH/CRS/Q/PAS → rue/allée/impasse/route/chemin/cours/quai/passage,
+  N° → number, Saint → street (as St already was), `(France)` wrapper dropped like `(India)`,
+  Cie/Compagnie → company, Ets → etablissements. Changes 11-40% of France records and 0-2% of US/India.
+  On a fresh 30k-S1 check set (dev_frozen): **n1 0.9618 vs n2 0.9619**, so it's neutral for US/India.
+- IDF cache moved into the norm directory (`<norm>/<split>_idf.parquet`), so a new normalization can't
+  reuse stale statistics.
+- Per-source (S2/S3) thresholds: no gain on dev OOF (single τ 0.75 is best).
+- New splits: `train10_s1` (10% of train S1, incl. dev, excl. lockbox), `check_s1` (30k fresh
+  holdout), `tune_s1` (the remaining 1.91M S1, for decision tuning at full density).
 
 ## Current best (dev, 22,133 train S1, 5-fold out-of-fold)
 | Item | Value |

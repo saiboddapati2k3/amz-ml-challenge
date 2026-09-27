@@ -11,6 +11,7 @@ never seen during fitting, so OOF scores are safe for calibration and decision t
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import time
@@ -84,9 +85,68 @@ def run(feat: pl.DataFrame, folds: pl.DataFrame, out_dir: str, tag: str, loco: b
     return res, imp
 
 
+def load_parts(pattern: str, folds: pl.DataFrame, log=print):
+    """Feature parts -> (float32 X, id frame, names) without ever holding a full frame: rows are
+    copied part by part into one preallocated array (the 10% sample is ~9M rows x 73)."""
+    paths = sorted(glob.glob(pattern))
+    schema = pl.read_parquet_schema(paths[0])
+    names = [c for c in schema if c not in ID_COLS + EXCLUDE + ["fold", "country"]]
+    keep = folds.select("s1_eid", "country", "fold")
+    n = sum(pl.scan_parquet(p).join(keep.lazy().select("s1_eid"), on="s1_eid", how="semi")
+              .select(pl.len()).collect().item() for p in paths)
+    X = np.empty((n, len(names)), dtype=np.float32)
+    ids, o = [], 0
+    for p in paths:
+        extra = [c for c in ("s1_eid", "cand_eid", "src", "y") if c not in names]  # 'src' is also a feature
+        d = pl.read_parquet(p, columns=names + extra).join(keep, on="s1_eid")
+        X[o:o + d.height] = d.select(names).to_numpy().astype(np.float32, copy=False)
+        ids.append(d.select("s1_eid", "cand_eid", "src", "country", "fold", "y"))
+        o += d.height
+    assert o == n
+    log(f"  loaded {n:,} rows x {len(names)} features from {len(paths)} parts ({X.nbytes / 2**30:.1f} GB)")
+    return X, pl.concat(ids), names
+
+
+def run_lean(pattern: str, folds: pl.DataFrame, out_dir: str, tag: str, log=print):
+    """K-fold like run(), for large samples: the binned LightGBM dataset is built once and every
+    fold trains on a subset of it, so no fold copies X."""
+    X, ids, names = load_parts(pattern, folds, log)
+    y = ids["y"].to_numpy().astype(np.float32)
+    g = ids["s1_eid"].to_numpy()
+    fold = ids["fold"].to_numpy()
+    full = lgb.Dataset(X, label=y, feature_name=names, free_raw_data=False,
+                       params={"max_bin": PARAMS["max_bin"], "verbose": -1}).construct()
+    oof = np.full(len(y), np.nan, dtype=np.float32)
+    gain = np.zeros(len(names))
+    meta = []
+    for k in np.unique(fold):
+        t0 = time.time()
+        tr = np.flatnonzero(fold != k)
+        rng = np.random.default_rng(42)
+        ug = np.unique(g[tr])
+        hold = np.isin(g[tr], rng.choice(ug, size=max(1, len(ug) // 10), replace=False))
+        dtr, dva = full.subset(tr[~hold].tolist()), full.subset(tr[hold].tolist())
+        m = lgb.train(PARAMS, dtr, MAX_ROUNDS, valid_sets=[dva], callbacks=[lgb.early_stopping(100, verbose=False)])
+        te = np.flatnonzero(fold == k)
+        oof[te] = m.predict(X[te], num_iteration=m.best_iteration)
+        os.makedirs(out_dir, exist_ok=True)
+        m.save_model(os.path.join(out_dir, f"model_{tag}_{k}.txt"), num_iteration=m.best_iteration)
+        gain += m.feature_importance("gain")
+        meta.append({"split": str(k), "best_iter": m.best_iteration, "n_train": int(len(tr)),
+                     "n_test": int(len(te)), "sec": round(time.time() - t0, 1)})
+        log(f"  split {k}: best_iter {m.best_iteration}, {time.time() - t0:.0f}s")
+    res = ids.with_columns(p=pl.Series(oof))
+    res.write_parquet(os.path.join(out_dir, f"oof_{tag}.parquet"))
+    imp = pl.DataFrame({"feature": names, "gain": gain / gain.sum()}).sort("gain", descending=True)
+    imp.write_csv(os.path.join(out_dir, f"importance_{tag}.csv"))
+    with open(os.path.join(out_dir, f"meta_{tag}.json"), "w") as fh:
+        json.dump({"params": PARAMS, "features": names, "splits": meta}, fh, indent=1)
+    return res, imp
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--feat", required=True)
+    ap.add_argument("--feat", required=True, help="one parquet file, or a directory of feature parts")
     ap.add_argument("--s1-ids", required=True)
     ap.add_argument("--truth", default="dataset/train/train_ground_truth.tsv")
     ap.add_argument("--out", default="artifacts/model")
@@ -99,7 +159,11 @@ def main():
     folds = s1_folds(pl.read_parquet(args.s1_ids).select("eid", "country"), args.truth, args.k, args.seed)
     os.makedirs(args.out, exist_ok=True)
     folds.write_parquet(os.path.join(args.out, f"folds_{args.tag}.parquet"))
-    res, imp = run(pl.read_parquet(args.feat), folds, args.out, args.tag, args.loco, lg)
+    if os.path.isdir(args.feat):
+        assert not args.loco, "--loco needs a single feature file"
+        res, imp = run_lean(os.path.join(args.feat, "*.parquet"), folds, args.out, args.tag, lg)
+    else:
+        res, imp = run(pl.read_parquet(args.feat), folds, args.out, args.tag, args.loco, lg)
     from sklearn.metrics import average_precision_score, roc_auc_score
     lg(f"OOF AUC {roc_auc_score(res['y'], res['p']):.5f}  AP {average_precision_score(res['y'], res['p']):.5f}")
     with pl.Config(tbl_rows=15, ascii_tables=True):

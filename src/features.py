@@ -13,7 +13,7 @@ Feature groups (every one is script/country agnostic -- no country id is ever a 
          (the one-owner signal; only meaningful when the candidate file covers the whole split)
 
 Token idf comes from token document frequencies over S1+S2+S3 of the same split and
-country (label-free, identical procedure on train and test), cached in artifacts/stats.
+country (label-free, identical procedure on train and test), cached in <norm>/<split>_idf.parquet.
 """
 from __future__ import annotations
 
@@ -41,9 +41,10 @@ SCALED = ["s_name", "s_addr", "s_mix", "s_all", "name_unm_a", "name_unm_b", "add
 # --------------------------------------------------------------------------- #
 # corpus statistics
 # --------------------------------------------------------------------------- #
-def token_df(norm: str, split: str, out_dir: str = "artifacts/stats") -> pl.DataFrame:
-    """(country, kind, t, idf) for name_core and addr_n tokens; cached per split."""
-    path = os.path.join(out_dir, f"{split}_idf.parquet")
+def token_df(norm: str, split: str, out_dir: str | None = None) -> pl.DataFrame:
+    """(country, kind, t, idf) for name_core and addr_n tokens; cached per split inside the norm
+    directory, so a new normalization version can never pick up stale statistics."""
+    path = os.path.join(out_dir or norm, f"{split}_idf.parquet")
     if os.path.exists(path):
         return pl.read_parquet(path)
     parts, n_docs = [], []
@@ -61,7 +62,7 @@ def token_df(norm: str, split: str, out_dir: str = "artifacts/stats") -> pl.Data
              .join(n, on="country")
              .select("country", "kind", "t",
                      idf=(pl.col("n").cast(pl.Float64) / pl.col("df")).log().cast(pl.Float32)))
-    os.makedirs(out_dir, exist_ok=True)
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
     idf.write_parquet(path)
     return idf
 
