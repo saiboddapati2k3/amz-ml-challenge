@@ -33,3 +33,52 @@ test: 71 candidate parts, 3 fold models, 73 features
   part 26/71: 1,066,873 pairs (952s)
   part 27/71: 1,067,605 pairs (1106s)
   part 28/71: 1,066,009 pairs (1275s)
+  part 29/71: 1,066,882 pairs (1436s)
+  part 30/71: 1,068,257 pairs (1579s)
+  stopping after 10 new parts (--max-parts); re-run to continue
+peak RSS 1.83 GB, wall 1581s
+test: 71 candidate parts, 3 fold models, 73 features
+  part 31/71: 1,067,988 pairs (145s)
+  part 32/71: 1,066,595 pairs (287s)
+  part 33/71: 1,068,134 pairs (427s)
+  part 34/71: 1,068,171 pairs (567s)
+  part 35/71: 1,068,928 pairs (707s)
+  part 36/71: 1,066,513 pairs (854s)
+  part 37/71: 1,066,677 pairs (1017s)
+  part 38/71: 1,067,789 pairs (1200s)
+  part 39/71: 1,068,610 pairs (1364s)
+  part 40/71: 1,066,570 pairs (1519s)
+  stopping after 10 new parts (--max-parts); re-run to continue
+peak RSS 2.13 GB, wall 1521s
+test: 71 candidate parts, 3 fold models, 73 features
+  part 41/71: 1,067,793 pairs (144s)
+  part 42/71: 1,067,643 pairs (289s)
+  part 43/71: 1,067,556 pairs (434s)
+  part 44/71: 425,749 pairs (494s)
+  part 45/71: 1,023,510 pairs (632s)
+  part 46/71: 1,023,624 pairs (767s)
+  part 47/71: 1,021,893 pairs (900s)
+  part 48/71: 1,022,772 pairs (1036s)
+  part 49/71: 1,022,276 pairs (1170s)
+  part 50/71: 1,022,716 pairs (1304s)
+  stopping after 10 new parts (--max-parts); re-run to continue
+peak RSS 1.87 GB, wall 1306s
+test: 71 candidate parts, 3 fold models, 73 features
+  part 51/71: 1,022,468 pairs (144s)
+  part 52/71: 1,023,030 pairs (297s)
+  part 53/71: 1,023,032 pairs (437s)
+  part 54/71: 1,022,495 pairs (573s)
+  part 55/71: 1,022,860 pairs (708s)
+  part 56/71: 1,022,790 pairs (852s)
+  part 57/71: 1,022,252 pairs (986s)
+  part 58/71: 1,021,784 pairs (1119s)
+  part 59/71: 1,022,426 pairs (1254s)
+  part 60/71: 1,022,379 pairs (1388s)
+  stopping after 10 new parts (--max-parts); re-run to continue
+peak RSS 1.75 GB, wall 1390s
+test: 71 candidate parts, 3 fold models, 73 features
+  part 61/71: 1,022,076 pairs (135s)
+  part 62/71: 1,022,519 pairs (271s)
+  part 63/71: 1,023,274 pairs (416s)
+  part 64/71: 1,022,716 pairs (573s)
+  part 65/71: 1,022,286 pairs (732s)

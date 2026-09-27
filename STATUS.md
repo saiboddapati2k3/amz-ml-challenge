@@ -33,6 +33,12 @@ Last updated 2026-09-27 (Mac). Newest findings first; the 2026-09-26 Windows not
 - Inference cost: m10 5 folds ≈ 195 s per 1M pairs (prediction dominates), so test takes ~3.9 h. The
   submission uses folds 0-2 (~135 s/M, ~2.7 h) plus a second model m10b trained on a disjoint 10% sample
   (`train10b_s1`); their scores are averaged per pair (`scripts/avg_scores.py`).
+- **Cross-encoder reranker** (`notebooks/kaggle_ce.ipynb`, MiniLM-L6 ms-marco, Apache-2.0, fine-tuned on
+  Kaggle T4 on 700k pairs: every m10 out-of-fold pair with 0.001 < p < 0.999, plus 150k confident
+  positives and 150k confident negatives; holdout AUC 0.9941 on that hard mix). It rescores only pairs
+  with an uncertain LightGBM score; blend = sigmoid(w·logit(p_lgb) + (1-w)·logit(p_ce)). **Check set:
+  LightGBM 0.9670 → blend 0.9734 (w0.6, τ0.65); cross-fitted over S1 halves +0.57 / +0.68.** US
+  0.9775→0.9825, India 0.9517→0.9600. Test has 4.1% of pairs in the band (train 2%).
 - Blocking misses (dev, 3,965 pairs): native-script India 1,228; S2/S3 without address 1,130, of which
   only 110 have a unique S1 name (the rest are shared by 6-50+ S1: not recoverable without false
   positives); fully renamed or relocated records. No blocking rework before the deadline.

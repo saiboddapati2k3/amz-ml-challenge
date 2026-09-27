@@ -42,6 +42,8 @@ def main():
     ap.add_argument("--split", default="train")
     ap.add_argument("--norm", default="artifacts/norm")
     ap.add_argument("--easy", type=int, default=150_000, help="train: confident positives and negatives each")
+    ap.add_argument("--lo", type=float, default=LO)
+    ap.add_argument("--hi", type=float, default=HI)
     args = ap.parse_args()
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     if args.mode == "train":
@@ -53,7 +55,7 @@ def main():
                            neg.sample(min(args.easy, neg.height), seed=2)]).sample(fraction=1.0, shuffle=True, seed=3)
     else:
         pairs = (pl.scan_parquet(os.path.join(args.src, "part-*.parquet")).select("s1_eid", "cand_eid", "p")
-                   .filter(pl.col("p").is_between(LO, HI)).collect())
+                   .filter(pl.col("p").is_between(args.lo, args.hi)).collect())
     out = attach(pairs, args.norm, args.split)
     assert out["text_a"].null_count() == 0 and out["text_b"].null_count() == 0
     out.write_parquet(args.out, compression="zstd")

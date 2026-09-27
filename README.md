@@ -55,6 +55,19 @@ scripts/predict_loop.sh --split test --norm artifacts/norm_n2 --cand artifacts/c
 python utils/validate_submission.py -m output/matching_results.tsv -c output/candidate_pairs.tsv -t dataset/test
 ```
 
+Cross-encoder stage (GPU; we used a Kaggle T4 with `notebooks/kaggle_ce.ipynb`):
+```bash
+python scripts/ce_export.py train artifacts/model/oof_m10.parquet ce_data/ce_train.parquet          # 700k pairs
+python scripts/ce_export.py pairs artifacts/score/test_n2_v3h1__<model> ce_data/ce_test.parquet \
+    --split test --norm artifacts/norm_n2 --lo 0.0003 --hi 0.9997                                  # uncertain band
+# notebooks/kaggle_ce.ipynb: fine-tune on ce_train, score ce_test -> ce_scores_test.parquet
+python scripts/ce_apply.py artifacts/score/test_n2_v3h1__<model> ce_data/ce_scores_test.parquet \
+    artifacts/score/test_n2_v3h1__final --w 0.55
+ln -s test_n2_v3h1 artifacts/cand/test_n2_v3h1__final                                             # cached scores
+python -m src.predict --split test --norm artifacts/norm_n2 --cand artifacts/cand/test_n2_v3h1__final \
+    --models "artifacts/model/model_m10_*.txt" --tau TAU_FINAL --one-owner hard --out output
+```
+
 Honest accuracy checks (all on train S1 the model never saw):
 ```bash
 # one-owner mode x threshold at full density (needs scores for the whole train split)

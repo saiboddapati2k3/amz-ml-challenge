@@ -14,6 +14,8 @@ metric (macro F0.5 per Source-1 entity):
 - A multi-key weighted inverted index generates about 42 candidates per Source-1 (S1) record.
 - A LightGBM ensemble scores every candidate pair on 73 label-free string, number and blocking
   features.
+- A fine-tuned **cross-encoder** (MiniLM, 22M parameters) rereads the 4% of pairs LightGBM is unsure
+  about, and the two scores are blended.
 - A decision layer enforces a fact we verified on all 7.6M training pairs: **every S2/S3 record belongs
   to at most one S1** (S1 is deduplicated). Only the best-scoring S1 keeps each record.
 
@@ -50,7 +52,8 @@ EDA on train (US, India) and label-free statistics on test:
 
 ### 2.2 Solution Strategy
 
-**Approach Type:** Blocking + gradient-boosted classifier + constrained (one-owner) decision layer.
+**Approach Type:** Blocking + gradient-boosted classifier + transformer cross-encoder on uncertain
+pairs + constrained (one-owner) decision layer.
 **Core Innovations:**
 1. **One-owner resolution, evaluated at full density.** The rule only works when every competing S1 is
    present, so it can't be measured on a small validation sample. We scored the entire training split
@@ -58,7 +61,10 @@ EDA on train (US, India) and label-free statistics on test:
 2. **Label-free abbreviation discovery for an unseen country:** tokens frequent in S2/S3 but absent in
    S1 of the same country are abbreviations or generator noise. This found R→rue, ALL→allée,
    IMP→impasse, N°→number and the `(France)` wrapper without any French labels.
-3. **Transductive, label-free rarity:** token idf and blocking-key weights are computed per country on
+3. **Cascade reranking:** a small cross-encoder, fine-tuned on the pairs where LightGBM is uncertain,
+   rescores only that band (2% of train pairs, 4% of test pairs). Their logits are averaged. On a
+   fresh 30k-S1 check set: 0.9670 → 0.9733.
+4. **Transductive, label-free rarity:** token idf and blocking-key weights are computed per country on
    the corpus being resolved, and idf-scale features are divided by the country's ln N. They transfer
    to a new country without retuning.
 
@@ -123,6 +129,15 @@ bagging 0.8, L2 1.0, early stopping on an S1-grouped inner holdout, about 1,800 
 each trained with 5 S1-grouped folds on a disjoint random 10% of train S1 (220,682 S1, 9.2M pairs each).
 The submission averages folds 0-2 of both models (6 models).
 
+**Cross-encoder (stage 2):** `cross-encoder/ms-marco-MiniLM-L-6-v2` (Apache-2.0, 22M parameters),
+fine-tuned for 2 epochs on a Kaggle T4 (AdamW, lr 3e-5, batch 256, fp16, max length 128). Training
+data: 700k pairs, namely every out-of-fold pair of the LightGBM training sample with 0.001 < p < 0.999,
+plus 150k confident positives and 150k confident negatives. Input: "<name> ; <address>" of both
+records, transliterated to Latin (anyascii), so native-script names work with an English wordpiece
+vocabulary. Holdout AUC on this hard mix: 0.9941. At inference only pairs with 0.0003 < p_lgb < 0.9997
+are rescored, and p = σ(w·logit(p_lgb) + (1−w)·logit(p_ce)) with w = 0.55, chosen on half of the check
+set and confirmed on the other half.
+
 **Threshold selection method:**
 - τ comes from out-of-fold macro F0.5 on the training sample, and is adjusted for the one-owner rule on
   full-density held-out train scores.
@@ -138,6 +153,7 @@ The submission averages folds 0-2 of both models (6 models).
 | Baseline (1% sample model, τ 0.75) | dev OOF 0.9605, lockbox 0.9603 | 0.942 |
 | + one-owner (hard) | India full-density +0.26 (τ0.75), +0.31 (τ0.65) | 0.945644 |
 | + 10% training sample (m10), France normalization | dev OOF 0.9664, fresh check set 0.9670 (+0.52) | [U3] |
+| + cross-encoder blend on uncertain pairs | check set 0.9733 (+0.64; cross-fitted +0.57/+0.68) | [U4] |
 | + second model on a disjoint 10% (ensemble) | check set [ENS] | [U5] |
 
 - France: an upload with the France rows emptied (0.815) gives France ≈ 0.87-0.90, against about 0.95 for US+India.
