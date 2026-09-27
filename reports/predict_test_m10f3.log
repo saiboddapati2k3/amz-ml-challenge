@@ -1,1 +1,35 @@
 test: 71 candidate parts, 3 fold models, 73 features
+  part 1/71: 1,049,744 pairs (137s)
+  part 2/71: 1,050,808 pairs (267s)
+  part 3/71: 1,050,895 pairs (400s)
+  part 4/71: 1,050,101 pairs (532s)
+  part 5/71: 1,050,974 pairs (667s)
+  part 6/71: 1,050,443 pairs (799s)
+  part 7/71: 1,050,469 pairs (928s)
+  part 8/71: 1,050,627 pairs (1067s)
+  part 9/71: 1,050,127 pairs (1199s)
+  part 10/71: 1,049,995 pairs (1338s)
+  stopping after 10 new parts (--max-parts); re-run to continue
+peak RSS 2.16 GB, wall 1340s
+test: 71 candidate parts, 3 fold models, 73 features
+  part 11/71: 396,599 pairs (50s)
+  part 12/71: 1,067,140 pairs (190s)
+  part 13/71: 1,067,874 pairs (343s)
+  part 14/71: 1,067,124 pairs (2700s)
+  part 15/71: 1,068,086 pairs (3935s)
+  part 16/71: 1,067,061 pairs (4952s)
+  part 17/71: 1,067,375 pairs (5089s)
+  part 18/71: 1,066,782 pairs (6982s)
+  part 19/71: 1,066,588 pairs (7122s)
+  part 20/71: 1,068,014 pairs (7269s)
+  stopping after 10 new parts (--max-parts); re-run to continue
+peak RSS 2.23 GB, wall 7271s
+test: 71 candidate parts, 3 fold models, 73 features
+  part 21/71: 1,068,365 pairs (150s)
+  part 22/71: 1,066,950 pairs (301s)
+  part 23/71: 1,068,136 pairs (457s)
+  part 24/71: 1,068,678 pairs (628s)
+  part 25/71: 1,067,753 pairs (788s)
+  part 26/71: 1,066,873 pairs (952s)
+  part 27/71: 1,067,605 pairs (1106s)
+  part 28/71: 1,066,009 pairs (1275s)

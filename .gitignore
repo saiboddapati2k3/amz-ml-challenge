@@ -24,3 +24,6 @@ artifacts/model/*
 !artifacts/model/folds_dev_frozen.parquet
 !artifacts/model/meta_dev_frozen.json
 !artifacts/model/importance_dev_frozen.csv
+
+# cross-encoder data exports (uploaded to Kaggle, not committed)
+ce_data/
