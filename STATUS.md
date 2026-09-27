@@ -33,6 +33,16 @@ Last updated 2026-09-27 (Mac). Newest findings first; the 2026-09-26 Windows not
 - Inference cost: m10 5 folds ≈ 195 s per 1M pairs (prediction dominates), so test takes ~3.9 h. The
   submission uses folds 0-2 (~135 s/M, ~2.7 h) plus a second model m10b trained on a disjoint 10% sample
   (`train10b_s1`); their scores are averaged per pair (`scripts/avg_scores.py`).
+- **Leaderboard: m10 (3 folds) + n2 + one-owner τ0.75 = 0.942** (worse than 0.9456). Diagnosis:
+  France gained 45.7k predictions, 27,213 of them with the country word only on the candidate side
+  ("Triangle Gipsy Jeunes **France** SARL" at another house number). n2 dropped 'france' from name_core,
+  which made these sister entities look identical.
+- **Country-word rule** (`scripts/country_rule.py`): a candidate whose name has the record's own country
+  word while the S1 name doesn't is a different entity (train: candidate-only 'india' **0 positives of
+  158,579**; US 'us'/'usa'/'america'/'american' 0 of ~18,800). Zeroing them removes 27k France
+  predictions from the 0.942 run (3.26 → 3.15 per S1) and leaves US/India unchanged.
+- The cross-encoder is applied only to countries in its training data (US, India); unseen countries keep
+  the LightGBM score.
 - **Cross-encoder reranker** (`notebooks/kaggle_ce.ipynb`, MiniLM-L6 ms-marco, Apache-2.0, fine-tuned on
   Kaggle T4 on 700k pairs: every m10 out-of-fold pair with 0.001 < p < 0.999, plus 150k confident
   positives and 150k confident negatives; holdout AUC 0.9941 on that hard mix). It rescores only pairs
