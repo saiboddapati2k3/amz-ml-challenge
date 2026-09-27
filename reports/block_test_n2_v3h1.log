@@ -1,0 +1,62 @@
+/Users/saiboddapati/Documents/amz-ml-challenge/business_entity_resolution/src/block.py:96: DeprecationWarning: In Polars 2.0, the default behavior for `empty_as_null` will change to `False`. To keep the current behavior, explicitly set `empty_as_null=True`.
+  .select(pl.col("w").str.split(" ")).explode("w").select(phonetic(pl.col("w")))["w"]
+test: s1 1,732,544  s23 9,969,589
+[France] s1 259,452  s23 1,434,993
+/Users/saiboddapati/Documents/amz-ml-challenge/business_entity_resolution/src/block.py:104: DeprecationWarning: In Polars 2.0, the default behavior for `empty_as_null` will change to `False`. To keep the current behavior, explicitly set `empty_as_null=True`.
+  .explode("t").filter(pl.col("t").str.len_chars() > 0).unique(["row", "t"])
+/Users/saiboddapati/Documents/amz-ml-challenge/business_entity_resolution/src/block.py:110: DeprecationWarning: In Polars 2.0, the default behavior for `empty_as_null` will change to `False`. To keep the current behavior, explicitly set `empty_as_null=True`.
+  .explode("t").filter(pl.col("t").str.contains(r"^[a-z][a-z0-9]{2,}$"))
+/Users/saiboddapati/Documents/amz-ml-challenge/business_entity_resolution/src/block.py:113: DeprecationWarning: In Polars 2.0, the default behavior for `empty_as_null` will change to `False`. To keep the current behavior, explicitly set `empty_as_null=True`.
+  .explode("t").filter(pl.col("t").str.len_chars() > 0)
+/Users/saiboddapati/Documents/amz-ml-challenge/business_entity_resolution/src/block.py:119: DeprecationWarning: In Polars 2.0, the default behavior for `empty_as_null` will change to `False`. To keep the current behavior, explicitly set `empty_as_null=True`.
+  .explode("t").filter(pl.col("t").str.contains(r"^[a-z]{3,}$"))
+  tokens ready 9s
+  keys spilled (16s)
+  S1 25,000/259,452: kept 1.05M (18s)
+  S1 50,000/259,452: kept 1.05M (21s)
+  S1 75,000/259,452: kept 1.05M (23s)
+  S1 100,000/259,452: kept 1.05M (25s)
+  S1 125,000/259,452: kept 1.05M (27s)
+  S1 150,000/259,452: kept 1.05M (29s)
+  S1 175,000/259,452: kept 1.05M (32s)
+  S1 200,000/259,452: kept 1.05M (34s)
+  S1 225,000/259,452: kept 1.05M (36s)
+  S1 250,000/259,452: kept 1.05M (39s)
+  S1 259,452/259,452: kept 0.40M (40s)
+[India] s1 809,986  s23 4,717,565
+  tokens ready 37s
+  keys spilled (67s)
+  S1 25,000/809,986: kept 1.07M (71s)
+  S1 50,000/809,986: kept 1.07M (75s)
+  S1 75,000/809,986: kept 1.07M (79s)
+  S1 100,000/809,986: kept 1.07M (83s)
+  S1 125,000/809,986: kept 1.07M (87s)
+  S1 150,000/809,986: kept 1.07M (91s)
+  S1 175,000/809,986: kept 1.07M (95s)
+  S1 200,000/809,986: kept 1.07M (99s)
+  S1 225,000/809,986: kept 1.07M (103s)
+  S1 250,000/809,986: kept 1.07M (108s)
+  S1 275,000/809,986: kept 1.07M (113s)
+  S1 300,000/809,986: kept 1.07M (116s)
+  S1 325,000/809,986: kept 1.07M (121s)
+  S1 350,000/809,986: kept 1.07M (125s)
+  S1 375,000/809,986: kept 1.07M (129s)
+  S1 400,000/809,986: kept 1.07M (133s)
+  S1 425,000/809,986: kept 1.07M (139s)
+  S1 450,000/809,986: kept 1.07M (143s)
+  S1 475,000/809,986: kept 1.07M (147s)
+  S1 500,000/809,986: kept 1.07M (151s)
+  S1 525,000/809,986: kept 1.07M (155s)
+  S1 550,000/809,986: kept 1.07M (160s)
+  S1 575,000/809,986: kept 1.07M (164s)
+  S1 600,000/809,986: kept 1.07M (169s)
+  S1 625,000/809,986: kept 1.07M (174s)
+  S1 650,000/809,986: kept 1.07M (178s)
+  S1 675,000/809,986: kept 1.07M (183s)
+  S1 700,000/809,986: kept 1.07M (188s)
+  S1 725,000/809,986: kept 1.07M (192s)
+  S1 750,000/809,986: kept 1.07M (196s)
+  S1 775,000/809,986: kept 1.07M (200s)
+  S1 800,000/809,986: kept 1.07M (203s)
+  S1 809,986/809,986: kept 0.43M (206s)
+[US] s1 663,106  s23 3,817,031

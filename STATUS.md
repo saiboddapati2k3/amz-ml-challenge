@@ -17,6 +17,10 @@ Last updated 2026-09-27 (Mac). Newest findings first; the 2026-09-26 Windows not
   On a fresh 30k-S1 check set (dev_frozen): **n1 0.9618 vs n2 0.9619**, so it's neutral for US/India.
 - IDF cache moved into the norm directory (`<norm>/<split>_idf.parquet`), so a new normalization can't
   reuse stale statistics.
+- **One-owner at full density** (dev_frozen, 764,627 India S1 never trained on; all 883k India S1
+  compete): none τ0.75 **0.94359** → hard τ0.75 **0.94615** (+0.26) → **hard τ0.65 0.94673 (+0.31)**;
+  soft is at best 0.94657 (τ0.5). Chosen: hard, and one-owner lets the threshold drop ~0.1.
+  (`reports/owner_eval_india_dev_frozen.csv`)
 - Per-source (S2/S3) thresholds: no gain on dev OOF (single τ 0.75 is best).
 - New splits: `train10_s1` (10% of train S1, incl. dev, excl. lockbox), `check_s1` (30k fresh
   holdout), `tune_s1` (the remaining 1.91M S1, for decision tuning at full density).

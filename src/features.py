@@ -2,6 +2,8 @@
 
     python -m src.features --split train --cand artifacts/cand/train_dev_v3.parquet --tag train_dev
     python -m src.features --split test  --cand artifacts/cand/test.parquet --tag test
+    python -m src.features --split train --cand artifacts/cand/train_full_n1_v3h1 \
+        --s1-ids artifacts/splits/train10_s1.parquet --tag train10     # dir: one part at a time
 
 Feature groups (every one is script/country agnostic -- no country id is ever a feature):
   name   fuzzy scores on core / compact / phonetic views, alias-aware best, idf-weighted
@@ -18,6 +20,7 @@ country (label-free, identical procedure on train and test), cached in <norm>/<s
 from __future__ import annotations
 
 import argparse
+import glob
 import os
 import time
 
@@ -268,9 +271,38 @@ def main():
     ap.add_argument("--out", default="artifacts/feat")
     ap.add_argument("--tag", required=True)
     ap.add_argument("--truth", default="dataset/train/train_ground_truth.tsv")
+    ap.add_argument("--s1-ids", default=None, help="parquet with eid: keep only these S1 (e.g. a training sample)")
     args = ap.parse_args()
     lg = lambda m: print(m, flush=True)
-    feats = build(args.norm, args.split, read_cand(args.cand), log=lg)
+    keep = pl.read_parquet(args.s1_ids).select(pl.col("eid").alias("s1_eid")) if args.s1_ids else None
+    if os.path.isdir(args.cand):  # large sets: one blocker part at a time -> <out>/<tag>/part-*.parquet
+        out_dir = os.path.join(args.out, args.tag)
+        os.makedirs(out_dir, exist_ok=True)
+        idf = token_df(args.norm, args.split)
+        tp = truth_pairs(args.truth).select("s1_eid", "cand_eid", y=pl.lit(1, pl.Int8))
+        t0, rows = time.time(), 0
+        for path in sorted(glob.glob(os.path.join(args.cand, "part-*.parquet"))):
+            dst = os.path.join(out_dir, os.path.basename(path))
+            if os.path.exists(dst):
+                continue
+            cand = pl.read_parquet(path)
+            if keep is not None:
+                cand = cand.join(keep, on="s1_eid", how="semi")
+            if cand.height == 0:
+                continue
+            f = build_part(args.norm, args.split, cand, idf)
+            if args.split == "train":
+                f = f.join(tp, on=["s1_eid", "cand_eid"], how="left").with_columns(pl.col("y").fill_null(0))
+            f.write_parquet(dst + ".tmp")
+            os.replace(dst + ".tmp", dst)
+            rows += f.height
+            lg(f"  {os.path.basename(path)}: {f.height:,} pairs ({time.time() - t0:.0f}s)")
+        lg(f"wrote {out_dir}: {rows:,} new rows")
+        return
+    cand = read_cand(args.cand)
+    if keep is not None:
+        cand = cand.join(keep, on="s1_eid", how="semi")
+    feats = build(args.norm, args.split, cand, log=lg)
     if args.split == "train":
         tp = truth_pairs(args.truth).select("s1_eid", "cand_eid", y=pl.lit(1, pl.Int8))
         feats = feats.join(tp, on=["s1_eid", "cand_eid"], how="left").with_columns(pl.col("y").fill_null(0))

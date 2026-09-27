@@ -43,10 +43,13 @@ LEGAL_CANON = {
     "pllc": "pllc", "pc": "pc", "pa": "pa", "ltee": "limited",
     "sarl": "sarl", "sas": "sas", "sasu": "sasu", "sa": "sa", "eurl": "eurl", "sci": "sci",
     "snc": "snc", "gmbh": "gmbh", "ag": "ag", "bv": "bv", "nv": "nv", "spa": "spa", "srl": "srl",
-    "cie": "company", "compagnie": "company",
 }
+# ---- rules 'n2' (2026-09-27): abbreviations discovered label-free as tokens frequent in S2/S3 and
+# absent in S1 (see STATUS.md). 'n1' = the rules before that, which the final model's training
+# features were built with; the two score the same on US/India (check set 0.9618 vs 0.9619).
+LEGAL_CANON_N2 = {"cie": "company", "compagnie": "company"}
 # other name abbreviations (canonical <- variant); kept out of LEGAL_CANON so LEGAL_WORDS is unchanged
-NAME_CANON = {"ets": "etablissements", "st": "saint", "ste": "sainte"}
+NAME_CANON_N2 = {"ets": "etablissements", "st": "saint", "ste": "sainte"}
 LEGAL_WORDS = frozenset(list(LEGAL_CANON.values()) + [
     "private", "limited", "incorporated", "corporation", "company"])
 # words that carry no identity: honorifics, articles, generator noise ('(India)')
@@ -56,7 +59,7 @@ NOISE_WORDS = frozenset([
 ])
 # '(France)' is generator noise like '(India)'. Kept out of NOISE_WORDS: the blocker also uses those
 # words as phonetic stop skeletons, and 'france' shares its skeleton with 'frank'/'franco'.
-COUNTRY_NOISE = frozenset(["france"])
+COUNTRY_NOISE_N2 = frozenset(["france"])
 ADDR_CANON = {
     "rd": "road", "st": "street", "str": "street", "ave": "avenue", "av": "avenue",
     "blvd": "boulevard", "bd": "boulevard", "bld": "boulevard", "ln": "lane", "dr": "drive",
@@ -66,8 +69,10 @@ ADDR_CANON = {
     "opp": "opposite", "mkt": "market", "ngr": "nagar", "clny": "colony", "col": "colony",
     "no": "number", "num": "number", "unit": "unit", "pmb": "pmb",
     "ft": "fort", "mt": "mount", "trl": "trail", "ter": "terrace", "pt": "point",
-    # street-type abbreviations whose long form is common in S1 (found label-free: frequent in
-    # S2/S3, near absent in S1). Pure renames for US/India, where the long forms don't occur.
+}
+ADDR_CANON_N2 = {
+    # street-type abbreviations whose long form is common in S1. Pure renames for US/India, where
+    # the long forms don't occur.
     "r": "rue", "all": "allee", "imp": "impasse", "rte": "route", "ch": "chemin", "che": "chemin",
     "chem": "chemin", "crs": "cours", "q": "quai", "qu": "quai", "pas": "passage", "fbg": "faubourg",
     "res": "residence", "ndeg": "number",  # anyascii('N°') = 'Ndeg'
@@ -99,7 +104,21 @@ def _drop_tokens(col: pl.Expr, words) -> pl.Expr:
                .list.join(" "))
 
 
-def normalize(df: pl.DataFrame) -> pl.DataFrame:
+RULES = ("n1", "n2")
+
+
+def _tables(rules: str):
+    """(name canon, name drop words, address canon) for a rules version."""
+    if rules == "n1":
+        return LEGAL_CANON, LEGAL_WORDS | NOISE_WORDS, ADDR_CANON
+    if rules == "n2":
+        return (LEGAL_CANON | LEGAL_CANON_N2 | NAME_CANON_N2, LEGAL_WORDS | NOISE_WORDS | COUNTRY_NOISE_N2,
+                ADDR_CANON | ADDR_CANON_N2)
+    raise ValueError(rules)
+
+
+def normalize(df: pl.DataFrame, rules: str = "n2") -> pl.DataFrame:
+    name_canon, drop_words, addr_canon = _tables(rules)
     name = pl.col("business_name").fill_null("")
     addr = pl.col("business_address").fill_null("")
     df = df.with_columns(
@@ -133,13 +152,13 @@ def normalize(df: pl.DataFrame) -> pl.DataFrame:
         _seg1=pl.col("_n").str.split("|").list.get(1, null_on_oob=True).fill_null("").str.strip_chars(),
     )
     df = df.with_columns(
-        name_n=_canon_tokens(pl.col("_n").str.replace_all(r"\|", " "), LEGAL_CANON | NAME_CANON),
-        _alias=_canon_tokens(pl.col("_seg1"), LEGAL_CANON | NAME_CANON),
+        name_n=_canon_tokens(pl.col("_n").str.replace_all(r"\|", " "), name_canon),
+        _alias=_canon_tokens(pl.col("_seg1"), name_canon),
         name_web=pl.col("_web").is_not_null().cast(pl.Int8),
     )
     df = df.with_columns(
-        name_core=_drop_tokens(pl.col("name_n"), LEGAL_WORDS | NOISE_WORDS | COUNTRY_NOISE),
-        name_alias=_drop_tokens(pl.col("_alias"), LEGAL_WORDS | NOISE_WORDS | COUNTRY_NOISE),
+        name_core=_drop_tokens(pl.col("name_n"), drop_words),
+        name_alias=_drop_tokens(pl.col("_alias"), drop_words),
     )
     df = df.with_columns(  # never leave the core empty
         name_core=pl.when(pl.col("name_core") == "").then(pl.col("name_n")).otherwise(pl.col("name_core")))
@@ -153,7 +172,7 @@ def normalize(df: pl.DataFrame) -> pl.DataFrame:
           .str.replace_all(r"\s+", " ").str.strip_chars())
     df = df.with_columns(_a=a)
     df = df.with_columns(
-        addr_n=_canon_tokens(pl.col("_a"), ADDR_CANON),
+        addr_n=_canon_tokens(pl.col("_a"), addr_canon),
         addr_nums=(pl.col("_a").str.extract_all(r"\d+")
                    .list.eval(pl.element().str.strip_chars_start("0").replace("", "0"))
                    .list.unique().list.sort().list.join(" ")),
@@ -172,7 +191,8 @@ def encode_id_expr(col: str = "entity_id") -> pl.Expr:
 READ_KW = dict(separator="\t", quote_char=None, infer_schema=False, encoding="utf8")
 
 
-def prep_file(path: str, out_dir: str, batch_rows: int = 500_000, resume: bool = False) -> int:
+def prep_file(path: str, out_dir: str, batch_rows: int = 500_000, resume: bool = False,
+              rules: str = "n2") -> int:
     """Resume keeps finished parts; batch_rows must match the run that wrote them."""
     os.makedirs(out_dir, exist_ok=True)
     done = set()
@@ -194,7 +214,7 @@ def prep_file(path: str, out_dir: str, batch_rows: int = 500_000, resume: bool =
         chunk = chunk.with_columns(
             encode_id_expr(), src=pl.col("entity_id").str.slice(1, 1).cast(pl.Int8),
             country=pl.col("country").fill_null("").str.strip_chars())
-        normalize(chunk).write_parquet(os.path.join(out_dir, f"part-{i:03d}.parquet"),
+        normalize(chunk, rules).write_parquet(os.path.join(out_dir, f"part-{i:03d}.parquet"),
                                        compression="zstd")
     return total
 
@@ -211,11 +231,14 @@ def main():
     ap.add_argument("--sources", default="1,2,3", help="comma list, e.g. 3 to redo one source")
     ap.add_argument("--batch-rows", type=int, default=500_000)
     ap.add_argument("--resume", action="store_true", help="keep valid parts from a crashed run")
+    ap.add_argument("--rules", default="n2", choices=RULES,
+                    help="normalization rules version (n1: before the 2026-09-27 abbreviation rules)")
     args = ap.parse_args()
     for n in (int(x) for x in args.sources.split(",")):
         t = time.time()
         path = os.path.join(args.data, args.split, f"{args.split}_source{n}.tsv")
-        rows = prep_file(path, os.path.join(args.out, f"{args.split}_s{n}"), args.batch_rows, args.resume)
+        rows = prep_file(path, os.path.join(args.out, f"{args.split}_s{n}"), args.batch_rows, args.resume,
+                         args.rules)
         print(f"{args.split} s{n}: {rows:,} rows in {time.time() - t:.0f}s", flush=True)
 
 
